@@ -1,0 +1,5 @@
+Link(url='https://www.profession.hu/allasok/2', text='\n                        2\n                    ', fragment='', nofollow=True)
+Link(url='https://www.profession.hu/allasok/3', text='\n                        3\n                    ', fragment='', nofollow=True)
+Link(url='https://www.profession.hu/allasok/4', text='\n                        4\n                    ', fragment='', nofollow=True)
+Link(url='https://www.profession.hu/allasok/5', text='\n                        5\n                    ', fragment='', nofollow=True)
+Link(url='https://www.profession.hu/allasok/797', text='797', fragment='', nofollow=True)
