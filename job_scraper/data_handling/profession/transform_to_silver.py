@@ -1,13 +1,11 @@
 import polars as pl
 import os
+import job_scraper.data_handling.utils as utils
 from polars.dataframe import DataFrame
 from dotenv import load_dotenv
-from job_scraper.data_handling.utils import clean_null_values
-
 
 def clean_columns(df: DataFrame) -> DataFrame:
-    only_needed_columns_df = df.select(
-        [
+    only_needed_columns_df = df.select([
             "link",
             "prof_name",
             "item_brand",
@@ -17,8 +15,7 @@ def clean_columns(df: DataFrame) -> DataFrame:
             "variant",
         ]
     )
-    renamed_columns_df = only_needed_columns_df.rename(
-        {
+    renamed_columns_df = only_needed_columns_df.rename({
             "link": "job_url",
             "prof_name": "job_title",
             "item_brand": "company_name",
@@ -37,6 +34,37 @@ def clean_columns(df: DataFrame) -> DataFrame:
 
     return result_df
 
+def numeric_experience(df: DataFrame) -> DataFrame:
+    possible_experiences = {
+        "1-3 years experience": (1, 3),
+        ">10 years experience": (10, None),
+        "3-5 years experience": (3, 5),
+        "5-10 years experience": (5, 10),
+        "Career starter/freshly graduated": (0, None),
+        "professional experience is not required": (0, None)
+    }
+
+    df = df.with_columns([
+        pl.col("experience").replace(
+            old=list(possible_experiences.keys()),
+            new=list(map(lambda x: x[0],list(possible_experiences.values())))
+        ).alias("experience_low"),
+
+        pl.col("experience").replace(
+            old=list(possible_experiences.keys()),
+            new=list(map(lambda x: x[1],list(possible_experiences.values())))
+        ).alias("experience_high"),
+    ])
+
+    df = df.drop('experience')
+    df = df.cast({
+        'experience_low': pl.Int16,
+        'experience_high': pl.Int16
+    })
+
+    return df
+
+
 
 def main():
     load_dotenv(".env")
@@ -51,9 +79,11 @@ def main():
 
     clean_columns_df = clean_columns(bronze_df)
 
-    # clean_df = clean_null_values(clean_columns_df)
+    clean_df = utils.clean_null_values(clean_columns_df)
 
-    clean_columns_df.write_database(
+    experience_fixed_df = numeric_experience(clean_df)
+    
+    experience_fixed_df.write_database(
         table_name="profession_data_silver", connection=uri, if_table_exists="replace"
     )
 
